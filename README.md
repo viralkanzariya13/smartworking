@@ -35,9 +35,9 @@ Custom Order status change, log status changes in custom table & event based ema
  - Flush the cache by running `php bin/magento cache:flush`
 
 
-## Configuration
+## Admin UI
 
- - shipment_status_update (customorderprocessing/general/shipment_status_update)
+ - Admin > SMART WORKING > Order Status Log
 
 
 ## Specifications
@@ -49,4 +49,19 @@ Custom Order status change, log status changes in custom table & event based ema
     - sales_order_save_after > SmartWorking\CustomOrderProcessing\Observer\Webapi\Sales\OrderSaveAfter
 
 
-## Attributes
+## Unit Test
+
+- vendor/bin/phpunit -c dev/tests/unit/phpunit.xml.dist app/code/SmartWorking/CustomOrderProcessing/Test/Unit/UpdateOrderStatusTest.php
+ 
+## Rate Limiting
+
+- $ bin/magento setup:config:set \
+    --backpressure-logger=redis \
+    --backpressure-logger-redis-server=127.0.0.1 \
+    --backpressure-logger-redis-port=9345 \
+    --backpressure-logger-redis-timeout=1 \
+    --backpressure-logger-redis-persistent=persistent \
+    --backpressure-logger-redis-db=3 \
+    --backpressure-logger-redis-password=passw0rd@2k25\
+    --backpressure-logger-redis-user=user042025 \
+    --backpressure-logger-id-prefix=backpr_log   
