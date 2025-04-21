@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+	<system>
+		<tab id="smartworking" translate="label" sortOrder="999">
+			<label>smartworking</label>
+		</tab>
+		<section id="customorderprocessing" sortOrder="10" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+			<label>customorderprocessing</label>
+			<tab>smartworking</tab>
+			<resource>SmartWorking_CustomOrderProcessing::config_smartworking_orderstatus</resource>
+			<group id="general" sortOrder="10" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+				<label>general</label>
+				<field id="shipment_status_update" type="select" sortOrder="10" showInWebsite="1" showInStore="1" showInDefault="1" translate="label">
+					<label>shipment_status_update</label>
+					<comment/>
+					<source_model>Magento\Config\Model\Config\Source\Email\Template</source_model>
+				</field>
+			</group>
+		</section>
+	</system>
+</config>

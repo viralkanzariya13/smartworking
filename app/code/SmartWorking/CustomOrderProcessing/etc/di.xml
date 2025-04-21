@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+	<preference for="SmartWorking\CustomOrderProcessing\Api\OrderStatusUpdateManagementInterface" type="SmartWorking\CustomOrderProcessing\Model\OrderStatusUpdateManagement"/>
+	<preference for="SmartWorking\CustomOrderProcessing\Api\OrderStatusLogRepositoryInterface" type="SmartWorking\CustomOrderProcessing\Model\OrderStatusLogRepository"/>
+	<preference for="SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogInterface" type="SmartWorking\CustomOrderProcessing\Model\OrderStatusLog"/>
+	<preference for="SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
+	<virtualType name="SmartWorking\CustomOrderProcessing\Model\ResourceModel\OrderStatusLog\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+		<arguments>
+			<argument name="mainTable" xsi:type="string">sw_order_processing_log</argument>
+			<argument name="resourceModel" xsi:type="string">SmartWorking\CustomOrderProcessing\Model\ResourceModel\OrderStatusLog\Collection</argument>
+		</arguments>
+	</virtualType>
+	<type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+		<arguments>
+			<argument name="collections" xsi:type="array">
+				<item name="sw_order_processing_log_listing_data_source" xsi:type="string">SmartWorking\CustomOrderProcessing\Model\ResourceModel\OrderStatusLog\Grid\Collection</item>
+			</argument>
+		</arguments>
+	</type>
+</config>
