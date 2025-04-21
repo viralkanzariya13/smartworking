@@ -6,13 +6,6 @@
 				<resource id="SmartWorking_CustomOrderProcessing::CustomOrderProcessing" title="Order Processing" sortOrder="10">					
 					<resource id="SmartWorking_CustomOrderProcessing::Orderlog_delete" title="Order Processing" sortOrder="10"/>					
 				</resource>
-				<resource id="Magento_Backend::stores">
-					<resource id="Magento_Backend::stores_settings">
-						<resource id="Magento_Config::config">
-							<resource id="SmartWorking_CustomOrderProcessing::config_smartworking_orderstatus" title="customorderprocessing"/>
-						</resource>
-					</resource>
-				</resource>
 			</resource>
 		</resources>
 	</acl>
