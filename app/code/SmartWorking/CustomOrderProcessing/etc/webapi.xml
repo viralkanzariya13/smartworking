@@ -3,6 +3,7 @@
 	<route url="/V1/smartworking-customorderprocessing/orderstatusupdate" method="POST">
 		<service class="SmartWorking\CustomOrderProcessing\Api\OrderStatusUpdateManagementInterface" method="postOrderStatusUpdate"/>
 		<resources>
+			<resource ref="SmartWorking_CustomOrderProcessing::order_status_api" />
 			<resource ref="Magento_Sales::sales" />
 		</resources>
 	</route>

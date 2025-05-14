@@ -1,16 +1,14 @@
 <?php
-/**
- * Copyright ©  All rights reserved.
- * See COPYING.txt for license details.
- */
 declare(strict_types=1);
 
 namespace SmartWorking\CustomOrderProcessing\Model;
 
+use Magento\Framework\Api\SearchCriteriaInterface;
 use Magento\Framework\Api\SearchCriteria\CollectionProcessorInterface;
 use Magento\Framework\Exception\CouldNotDeleteException;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\App\CacheInterface;
 use SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogInterface;
 use SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogInterfaceFactory;
 use SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogSearchResultsInterfaceFactory;
@@ -20,128 +18,78 @@ use SmartWorking\CustomOrderProcessing\Model\ResourceModel\OrderStatusLog\Collec
 
 class OrderStatusLogRepository implements OrderStatusLogRepositoryInterface
 {
+    public const CACHE_TAG = 'smartworking_order_status_log';
+    private const CACHE_LIFETIME = 3600;
 
-    /**
-     * @var CollectionProcessorInterface
-     */
-    protected $collectionProcessor;
-
-    /**
-     * @var LogCollectionFactory
-     */
-    protected $orderstatuslogCollectionFactory;
-
-    /**
-     * @var ResourceOrderStatusLog
-     */
-    protected $resource;
-
-    /**
-     * @var OrderStatusLog
-     */
-    protected $searchResultsFactory;
-
-    /**
-     * @var OrderStatusLogInterfaceFactory
-     */
-    protected $orderstatuslogFactory;
-
-    /**
-     * @param ResourceOrderStatusLog $resource
-     * @param OrderStatusLogInterfaceFactory $orderstatuslogFactory
-     * @param LogCollectionFactory $orderstatuslogCollectionFactory
-     * @param OrderStatusLogSearchResultsInterfaceFactory $searchResultsFactory
-     * @param CollectionProcessorInterface $collectionProcessor
-     */
     public function __construct(
-        ResourceOrderStatusLog $resource,
-        OrderStatusLogInterfaceFactory $orderstatuslogFactory,
-        LogCollectionFactory $orderstatuslogCollectionFactory,
-        OrderStatusLogSearchResultsInterfaceFactory $searchResultsFactory,
-        CollectionProcessorInterface $collectionProcessor
-    ) {
-        $this->resource = $resource;
-        $this->orderstatuslogFactory = $orderstatuslogFactory;
-        $this->orderstatuslogCollectionFactory = $orderstatuslogCollectionFactory;
-        $this->searchResultsFactory = $searchResultsFactory;
-        $this->collectionProcessor = $collectionProcessor;
-    }
+        private readonly ResourceOrderStatusLog $resource,
+        private readonly OrderStatusLogInterfaceFactory $orderStatusLogFactory,
+        private readonly LogCollectionFactory $orderStatusLogCollectionFactory,
+        private readonly OrderStatusLogSearchResultsInterfaceFactory $searchResultsFactory,
+        private readonly CollectionProcessorInterface $collectionProcessor,
+        private readonly CacheInterface $cache
+    ) {}
 
-    /**
-     * @inheritDoc
-     */
-    public function save(OrderStatusLogInterface $orderstatuslog)
+    public function save(OrderStatusLogInterface $orderStatusLog): OrderStatusLogInterface
     {
         try {
-            $this->resource->save($orderstatuslog);
+            $this->resource->save($orderStatusLog);
+            $cacheKey = self::CACHE_TAG . '_' . $orderStatusLog->getId();
+            $this->cache->save(serialize($orderStatusLog), $cacheKey, [self::CACHE_TAG], self::CACHE_LIFETIME);
         } catch (\Exception $exception) {
-            throw new CouldNotSaveException(__(
-                'Could not save the orderstatuslog: %1',
-                $exception->getMessage()
-            ));
+            throw new CouldNotSaveException(__('Could not save the OrderStatusLog: %1', $exception->getMessage()));
         }
-        return $orderstatuslog;
+        return $orderStatusLog;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function get($orderstatuslogId)
+    public function get(int $orderStatusLogId): OrderStatusLogInterface
     {
-        $orderstatuslog = $this->orderstatuslogFactory->create();
-        $this->resource->load($orderstatuslog, $orderstatuslogId);
-        if (!$orderstatuslog->getId()) {
-            throw new NoSuchEntityException(__('OrderStatusLog with id "%1" does not exist.', $orderstatuslogId));
+        $cacheKey = self::CACHE_TAG . '_' . $orderStatusLogId;
+        $cached = $this->cache->load($cacheKey);
+        if ($cached) {
+            return unserialize($cached);
         }
-        return $orderstatuslog;
+
+        $orderStatusLog = $this->orderStatusLogFactory->create();
+        $this->resource->load($orderStatusLog, $orderStatusLogId);
+        if (!$orderStatusLog->getId()) {
+            throw new NoSuchEntityException(__('OrderStatusLog with id "%1" does not exist.', $orderStatusLogId));
+        }
+
+        $this->cache->save(serialize($orderStatusLog), $cacheKey, [self::CACHE_TAG], self::CACHE_LIFETIME);
+        return $orderStatusLog;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function getList(
-        \Magento\Framework\Api\SearchCriteriaInterface $criteria
-    ) {
-        $collection = $this->orderstatuslogCollectionFactory->create();
-
+    public function getList(SearchCriteriaInterface $criteria)
+    {
+        $collection = $this->orderStatusLogCollectionFactory->create();
         $this->collectionProcessor->process($criteria, $collection);
 
         $searchResults = $this->searchResultsFactory->create();
         $searchResults->setSearchCriteria($criteria);
-
-        $items = [];
-        foreach ($collection as $model) {
-            $items[] = $model;
-        }
-
-        $searchResults->setItems($items);
+        $searchResults->setItems($collection->getItems());
         $searchResults->setTotalCount($collection->getSize());
+
         return $searchResults;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function delete(OrderStatusLogInterface $orderstatuslog)
+    public function delete(OrderStatusLogInterface $orderStatusLog): bool
     {
         try {
-            $orderstatuslogModel = $this->orderstatuslogFactory->create();
-            $this->resource->load($orderstatuslogModel, $orderstatuslog->getOrderStatusLogId());
-            $this->resource->delete($orderstatuslogModel);
+            $orderStatusLogModel = $this->orderStatusLogFactory->create();
+            $this->resource->load($orderStatusLogModel, $orderStatusLog->getOrderStatusLogId());
+            $this->resource->delete($orderStatusLogModel);
+
+            $cacheKey = self::CACHE_TAG . '_' . $orderStatusLog->getOrderStatusLogId();
+            $this->cache->remove($cacheKey);
         } catch (\Exception $exception) {
-            throw new CouldNotDeleteException(__(
-                'Could not delete the OrderStatusLog: %1',
-                $exception->getMessage()
-            ));
+            throw new CouldNotDeleteException(__('Could not delete the OrderStatusLog: %1', $exception->getMessage()));
         }
         return true;
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function deleteById($orderstatuslogId)
+    public function deleteById(int $orderStatusLogId): bool
     {
-        return $this->delete($this->get($orderstatuslogId));
+        return $this->delete($this->get($orderStatusLogId));
     }
 }

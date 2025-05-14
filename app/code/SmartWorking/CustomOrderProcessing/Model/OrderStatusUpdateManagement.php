@@ -1,38 +1,33 @@
 <?php
-/**
- * Copyright ©  All rights reserved.
- * See COPYING.txt for license details.
- */
-
 declare(strict_types=1);
 
 namespace SmartWorking\CustomOrderProcessing\Model;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\App\CacheInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\ResourceModel\Order\Status\CollectionFactory as StatusCollectionFactory;
 use SmartWorking\CustomOrderProcessing\Api\OrderStatusUpdateManagementInterface;
 
 class OrderStatusUpdateManagement implements OrderStatusUpdateManagementInterface
 {
+    private const CACHE_ID = 'smartworking_order_statuses';
+    private const CACHE_TTL = 86400; // 24 hours
+
     /**
-     * @param OrderRepositoryInterface $orderRepository
-     * @param StatusCollectionFactory $statusCollectionFactory
+     * Cached list of valid order statuses for this request
+     *
+     * @var array|null
      */
+    private ?array $cachedOrderStatuses = null;
+
     public function __construct(
         protected OrderRepositoryInterface $orderRepository,
-        protected StatusCollectionFactory $statusCollectionFactory
+        protected StatusCollectionFactory $statusCollectionFactory,
+        protected CacheInterface $cache
     ) {
     }
 
-    /**
-     * Validate and update order status
-     *
-     * @param int $incrementId
-     * @param string $orderStatus
-     * @throws \Magento\Framework\Exception\MailException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
-     */
     public function postOrderStatusUpdate($incrementId, $orderStatus)
     {
         $order = $this->orderRepository->get($incrementId);
@@ -40,13 +35,19 @@ class OrderStatusUpdateManagement implements OrderStatusUpdateManagementInterfac
             throw new LocalizedException(__('Order does not exist.'));
         }
 
-        /* Check if given order status is invalid */
-        $orderStatuses = $this->statusCollectionFactory->create();
-        $orderStatuses->addFieldToSelect(['status']);
+        if ($this->cachedOrderStatuses === null) {
+            $cached = $this->cache->load(self::CACHE_ID);
+            if ($cached !== false) {
+                $this->cachedOrderStatuses = json_decode($cached, true);
+            } else {
+                $statusCollection = $this->statusCollectionFactory->create();
+                $statusCollection->addFieldToSelect(['status']);
+                $this->cachedOrderStatuses = $statusCollection->getColumnValues('status');
+                $this->cache->save(json_encode($this->cachedOrderStatuses), self::CACHE_ID, [], self::CACHE_TTL);
+            }
+        }
 
-        $statusArray = $orderStatuses->getColumnValues('status');
-
-        if (!in_array($orderStatus, $statusArray)) {
+        if (!in_array($orderStatus, $this->cachedOrderStatuses)) {
             throw new LocalizedException(__('Please provide valid order status.'));
         }
 

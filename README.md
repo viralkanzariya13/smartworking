@@ -64,4 +64,66 @@ Custom Order status change, log status changes in custom table & event based ema
     --backpressure-logger-redis-db=3 \
     --backpressure-logger-redis-password=passw0rd@2k25\
     --backpressure-logger-redis-user=user042025 \
-    --backpressure-logger-id-prefix=backpr_log   
+    --backpressure-logger-id-prefix=backpr_log  
+
+🧪 Integration Tests Setup
+Step 1: Register Test Directory
+Edit file:
+
+MagentoRoot/dev/tests/integration/phpunit.xml.dist
+Add inside <testsuites> block:
+
+<testsuite name="SmartWorking CustomOrderProcessing Integration Tests">
+  <directory suffix="Test.php">../../app/code/SmartWorking/CustomOrderProcessing/Test/Integration</directory>
+</testsuite>
+
+Step 2: Fixture File
+Path:
+
+app/code/SmartWorking/CustomOrderProcessing/Test/Integration/_files/order.php
+To Customize:
+
+Line where increment_id is set:
+
+$order->setIncrementId('100000001'); // <-- Change if needed
+Line where product_id is assigned:
+
+$orderItem->setProductId(1); // <-- Change to your product ID 
+
+📄 Sample Test File
+SmartWorking\CustomOrderProcessing\Test\Integration\Api\OrderStatusUpdateTest.php
+
+Automatically loads fixture from _files/order.php
+
+Posts JSON to the custom endpoint
+
+Asserts status code and DB change
+
+To run the test:
+
+cd dev/tests/integration
+../../../vendor/bin/phpunit
+
+## Improved Caching
+
+    ✅ CacheInterface used in OrderStatusUpdateManagement.php
+
+    ✅ Cache tag and identity implemented in OrderStatusLog.php
+
+    ✅ di.xml updated to inject CacheInterface
+
+    ✅ Status list is now cached in OrderStatusUpdateManagement
+
+    ✅ Identities implemented for cache invalidation
+
+    ✅ Avoids reloading order unnecessarily
+
+    ✅ Only minimal fields are queried (status)
+
+    ✅ getList() in repository is optimized with collectionProcessor
+
+    ✅ Caching in save() and get().
+
+    ✅ Cache invalidation in delete().
+
+    ✅ Proper use of CacheInterface with a unique tag and lifetime.

@@ -4,6 +4,11 @@
 	<preference for="SmartWorking\CustomOrderProcessing\Api\OrderStatusLogRepositoryInterface" type="SmartWorking\CustomOrderProcessing\Model\OrderStatusLogRepository"/>
 	<preference for="SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogInterface" type="SmartWorking\CustomOrderProcessing\Model\OrderStatusLog"/>
 	<preference for="SmartWorking\CustomOrderProcessing\Api\Data\OrderStatusLogSearchResultsInterface" type="Magento\Framework\Api\SearchResults"/>
+	<type name="SmartWorking\CustomOrderProcessing\Model\OrderStatusLogRepository">
+        <arguments>
+            <argument name="cache" xsi:type="object">Magento\Framework\App\CacheInterface</argument>
+        </arguments>
+    </type>
 	<virtualType name="SmartWorking\CustomOrderProcessing\Model\ResourceModel\OrderStatusLog\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
 		<arguments>
 			<argument name="mainTable" xsi:type="string">sw_order_processing_log</argument>
